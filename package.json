@@ -1,0 +1,16 @@
+{
+  "name": "qmk_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "e11i0t23",
+  "license": "GPLv3",
+  "repository": "https://github.com/e11i0t23/qmk_bot",
+  "dependencies": {
+    "discord.js": "^11.5.1",
+    "node-svn-ultimate": "^1.2.0"
+  }
+}

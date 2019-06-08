@@ -1,0 +1,12 @@
+# QMK Bot
+
+A simple discord bot for searching [The Qmk Docs](docs.qmk.fm) straight from discord  
+
+## Setup  
+- install subversion(svn) from [here](https://subversion.apache.org/) or using `apt install subversion` on debian
+- run `yarn` in order to download required node_modules
+- set `TOKEN` to be your discord bot token in index.js
+
+
+## Starting the bot  
+    yarn start
