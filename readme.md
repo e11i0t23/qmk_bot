@@ -10,3 +10,7 @@ A simple discord bot for searching [The Qmk Docs](docs.qmk.fm) straight from dis
 
 ## Starting the bot  
     yarn start
+
+## Using the bot  
+enter `$s YOURSEARCHTERM`  
+the bot will then respond with an embed of relevent doc pages
