@@ -18,6 +18,9 @@
 
 var svnUltimate = require("node-svn-ultimate");
 var fs = require("fs");
+
+require('dotenv').config()
+
 const baseURL = "https://docs.qmk.fm/#/";
 
 const Discord = require("discord.js");
@@ -59,6 +62,7 @@ client.on("message", msg => {
 });
 
 function updateDocs() {
+  console.log('Fetching Docs')
   return new Promise((resolve, reject) => {
     svnUltimate.commands.checkout(
       "https://github.com/qmk/qmk_firmware/trunk/docs/",
@@ -125,4 +129,4 @@ function search(term) {
 
 updateDocs()
   .then(() =>client.login(TOKEN))
-  .then(() => setInterval(updateDocs().then().catch(), 300000)).catch();
+  .then(() => setInterval(updateDocs, 300000));
