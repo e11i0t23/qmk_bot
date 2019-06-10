@@ -18,7 +18,6 @@
 
 var svnUltimate = require("node-svn-ultimate");
 var fs = require("fs");
-var http = require("http");
 
 require("dotenv").config();
 const curl = new (require("curl-request"))();
@@ -28,9 +27,8 @@ const statusURL = "http://api.qmk.fm/v1";
 
 const Discord = require("discord.js");
 const client = new Discord.Client();
-var util = require("util");
 
-docs = {};
+var docs = {};
 
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -54,7 +52,7 @@ client.on("message", msg => {
           .setAuthor("QMK Docs", "https://qmk.fm/qmk_icon_48.png")
           .setFooter("Bot created by e11i0t23#7272", client.ownerAvatarURL);
         urls.forEach(url => {
-          title = url.replace(baseURL, "");
+          title = url.replace(docsURL, "");
           title = title.replace(/_/g, " ");
           title = title.slice(0, -3);
           respone.addField(title, url);
@@ -72,16 +70,19 @@ function updateDocs() {
       "https://github.com/qmk/qmk_firmware/trunk/docs/",
       "./docs",
       function(err) {
+        if(err){
+          console.log(err);
+        }
         console.log("Checkout complete");
         //docs = {};
         fs.readdir("./docs/", (err, files) => {
           if (err) console.log(err);
           let jsfile = files.filter(f => f.split(".").pop() === "md");
           if (jsfile.length <= 0) {
-            console.log("Couldn't find docs.");
+            reject(new Error("Docs couldn't be found"));
             return;
           }
-          jsfile.forEach((f, i) => {
+          jsfile.forEach((f) => {
             console.log(f);
             fs.readFile(`./docs/${f}`, "utf8", (err, data) => {
               if (err) throw err;
@@ -97,14 +98,15 @@ function updateDocs() {
 }
 
 function search(term) {
-  termJoint = term.replace(/\s/gi, "_").toLowerCase();
-  urls = [];
+  var termJoint = term.replace(/\s/gi, "_").toLowerCase();
+  var urls = [];
   return new Promise((resolve, reject) => {
+    if(docs[0]==null) reject(new Error("Docs not found"));
     Object.keys(docs).forEach((key, idx, arr) => {
       if (key.includes(termJoint)) {
         console.log("FOUND");
-        console.log(baseURL + key);
-        urls.push(baseURL + key);
+        console.log(docsURL + key);
+        urls.push(docsURL + key);
       }
       if (idx == arr.length - 1) {
         resolve({
@@ -117,8 +119,8 @@ function search(term) {
       Object.keys(docs).forEach((key, idx, arr) => {
         if (docs[key].includes(term)) {
           console.log("FOUND");
-          console.log(baseURL + key);
-          urls.push(baseURL + key);
+          console.log(docsURL + key);
+          urls.push(docsURL + key);
         }
         if (idx == arr.length - 1) {
           resolve({
@@ -133,6 +135,7 @@ function search(term) {
 
 var prevousQueue = 0;
 var status = 200;
+var queue = 0;
 
 function getStatus() {
   console.log("getting status");
@@ -168,4 +171,5 @@ function getStatus() {
 
 updateDocs()
   .then(() => client.login(process.env.TOKEN))
-  .then(() => setInterval(updateDocs, 300000));
+  .then(() => setInterval(updateDocs, 300000))
+  .catch((err) => console.log(err));
