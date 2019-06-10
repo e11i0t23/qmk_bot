@@ -18,24 +18,28 @@
 
 var svnUltimate = require("node-svn-ultimate");
 var fs = require("fs");
+var http = require("http");
 
-require('dotenv').config()
+require("dotenv").config();
+const curl = new (require("curl-request"))();
 
-const baseURL = "https://docs.qmk.fm/#/";
+const docsURL = "https://docs.qmk.fm/#/";
+const statusURL = "http://api.qmk.fm/v1";
 
 const Discord = require("discord.js");
 const client = new Discord.Client();
+var util = require("util");
 
-docs = {}
-
-const TOKEN = "REPLACE WITH TOKEN"
+docs = {};
 
 client.on("ready", () => {
-	console.log(`Logged in as ${client.user.tag}!`);
-	client.user.setActivity("Clacking Hard 2MCUs")
-	client.fetchUser("198473355580538880", true).then(myUser => {
-		client.ownerAvatarURL = myUser.avatarURL; // My user's avatar is here!
-	})
+  console.log(`Logged in as ${client.user.tag}!`);
+  client.user.setActivity("Clacking Hard 2MCUs");
+  client.fetchUser("198473355580538880", true).then(myUser => {
+    client.ownerAvatarURL = myUser.avatarURL; // My user's avatar is here!
+  });
+  setInterval(getStatus, 5000);
+  //getStatus()
 });
 
 client.on("message", msg => {
@@ -46,9 +50,9 @@ client.on("message", msg => {
       if (data.urls.length > 0) {
         respone = new Discord.RichEmbed()
           .setTitle("Results:")
-					.setColor("#d0ef07")
-					.setAuthor("QMK Docs", "https://qmk.fm/qmk_icon_48.png")
-					.setFooter("Bot created by e11i0t23#7272", client.ownerAvatarURL);
+          .setColor("#d0ef07")
+          .setAuthor("QMK Docs", "https://qmk.fm/qmk_icon_48.png")
+          .setFooter("Bot created by e11i0t23#7272", client.ownerAvatarURL);
         urls.forEach(url => {
           title = url.replace(baseURL, "");
           title = title.replace(/_/g, " ");
@@ -62,7 +66,7 @@ client.on("message", msg => {
 });
 
 function updateDocs() {
-  console.log('Fetching Docs')
+  console.log("Fetching Docs");
   return new Promise((resolve, reject) => {
     svnUltimate.commands.checkout(
       "https://github.com/qmk/qmk_firmware/trunk/docs/",
@@ -127,6 +131,41 @@ function search(term) {
   });
 }
 
+var prevousQueue = 0;
+var status = 200;
+
+function getStatus() {
+  console.log("getting status");
+  curl.get(statusURL).then(({ statusCode, body, headers }) => {
+    console.log(statusCode, body, headers);
+    queue = body.queue_length;
+    if (queue >= 50) {
+      if (status == 200) {
+        client.channels.get(process.env.STATUSCHANNEL).send(
+          new Discord.RichEmbed()
+            .setTitle("WARNING")
+            .setDescription("Long compile queue, possible error detected")
+            .setAuthor(
+              "QMK Bot",
+              "https://qmk.fm/qmk_icon_48.png",
+              "https://github.com/e11i0t23/qmk_bot"
+            )
+            .setTimestamp(new Date())
+            .setFooter("Bot created by e11i0t23#7272", client.ownerAvatarURL)
+            .setColor(4594479)
+            .addField("QUEUE LENGTH:", queue)
+        );
+        status = 503;
+        prevousQueue = queue;
+      }
+    } else if (status == 503 && (prevousQueue < queue || queue == 0)) {
+      status = 200;
+      prevousQueue = queue;
+    }
+    console.log(queue, status);
+  });
+}
+
 updateDocs()
-  .then(() =>client.login(TOKEN))
+  .then(() => client.login(process.env.TOKEN))
   .then(() => setInterval(updateDocs, 300000));
